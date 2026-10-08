@@ -116,23 +116,22 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, setDoc, getDoc } 
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, setDoc } 
       from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
-    // 1. COLE AQUI SUAS CREDENCIAIS DO FIREBASE:
+    // Credenciais reais do projeto do Firebase:
     const firebaseConfig = {
-      apiKey: "SUA_API_KEY",
-      authDomain: "SEU_PROJETO.firebaseapp.com",
-      projectId: "SEU_PROJETO",
-      storageBucket: "SEU_PROJETO.appspot.com",
-      messagingSenderId: "SEU_SENDER_ID",
-      appId: "SEU_APP_ID"
+      apiKey: "AIzaSyBd12y23Gj5dP0aFAFlAj_5PBZibJ3V2Nw",
+      authDomain: "controle-gastos-5f2b3.firebaseapp.com",
+      projectId: "controle-gastos-5f2b3",
+      storageBucket: "controle-gastos-5f2b3.firebasestorage.app",
+      messagingSenderId: "171302880872",
+      appId: "1:171302880872:web:be84f4d8aeef60b9c55ddd"
     };
 
-    // 2. SENHA DO CASAL:
+    // Palavra-passe configurada para 2211:
     const SENHA_SECRETA = "2211";
 
-    // Categorias solicitadas com valores padrão iniciais (em R$)
     const CATEGORIAS_CONFIG = {
       "Gasolina": 400,
       "Transporte": 150,
@@ -147,7 +146,6 @@
     const transacoesCol = collection(db, "gastos");
     const metaDocRef = doc(db, "configuracoes", "metas");
 
-    // Elementos da interface
     const telaBloqueio = document.getElementById("tela-bloqueio");
     const painelGastos = document.getElementById("painel-gastos");
     const formSenha = document.getElementById("form-senha");
@@ -167,7 +165,6 @@
     let metas = { ...CATEGORIAS_CONFIG };
     let gastosAtuais = [];
 
-    // Gerenciamento de Acesso / Senha
     function desbloquear() {
       telaBloqueio.classList.add("hidden");
       painelGastos.classList.remove("hidden");
@@ -198,7 +195,6 @@
       }
     });
 
-    // Abrir/Fechar configuração de metas
     btnMetas.addEventListener("click", () => {
       modalMetas.classList.toggle("hidden");
     });
@@ -226,11 +222,9 @@
       atualizarInterface();
     });
 
-    // Iniciar escuta em tempo real do Firebase
     function inicializarDados() {
       renderizarCamposMetas();
 
-      // 1. Escuta mudanças nas metas estipuladas
       onSnapshot(metaDocRef, (docSnap) => {
         if (docSnap.exists()) {
           metas = { ...CATEGORIAS_CONFIG, ...docSnap.data() };
@@ -239,7 +233,6 @@
         atualizarInterface();
       });
 
-      // 2. Escuta os lançamentos de gastos
       const q = query(transacoesCol, orderBy("data", "desc"));
       onSnapshot(q, (snapshot) => {
         gastosAtuais = [];
@@ -250,13 +243,10 @@
       });
     }
 
-    // Calcula débitos, porcentagens e atualiza os cards e lista
     function atualizarInterface() {
-      // Inicializar somas
       const totalPorCategoria = {};
       Object.keys(metas).forEach(cat => totalPorCategoria[cat] = 0);
 
-      // Renderizar Histórico
       lista.innerHTML = "";
       if (gastosAtuais.length === 0) {
         lista.innerHTML = '<li class="py-3 text-slate-400 text-center">Nenhum gasto registrado ainda.</li>';
@@ -272,89 +262,4 @@
         li.innerHTML = `
           <div>
             <div class="font-medium text-slate-900">${item.descricao}</div>
-            <div class="text-xs text-slate-500">${item.categoria} • Pago por <strong>${item.autor}</strong></div>
-          </div>
-          <div class="flex items-center gap-3">
-            <span class="font-semibold text-slate-800">R$ ${item.valor.toFixed(2)}</span>
-            <button onclick="removerGasto('${item.id}')" class="text-xs text-rose-500 hover:text-rose-700 font-bold p-1">✕</button>
-          </div>
-        `;
-        lista.appendChild(li);
-      });
-
-      // Renderizar Cards de Colunas com Débito e Porcentagem
-      cardsContainer.innerHTML = "";
-      Object.keys(metas).forEach(cat => {
-        const estipulado = metas[cat] || 0;
-        const gasto = totalPorCategoria[cat] || 0;
-        const restante = estipulado - gasto;
-        const porcentagem = estipulado > 0 ? (gasto / estipulado) * 100 : 0;
-
-        // Definir cor da barra e do saldo
-        let barColor = "bg-emerald-500";
-        let statusTextColor = "text-emerald-700";
-        if (porcentagem > 75 && porcentagem <= 100) {
-          barColor = "bg-amber-500";
-          statusTextColor = "text-amber-700";
-        } else if (porcentagem > 100) {
-          barColor = "bg-rose-500";
-          statusTextColor = "text-rose-600";
-        }
-
-        const card = document.createElement("div");
-        card.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between";
-        card.innerHTML = `
-          <div>
-            <div class="flex justify-between items-center mb-1">
-              <span class="font-bold text-slate-900 text-sm">${cat}</span>
-              <span class="text-xs font-bold ${statusTextColor}">${porcentagem.toFixed(0)}%</span>
-            </div>
-            
-            <!-- Barra de Progresso -->
-            <div class="w-full bg-slate-100 rounded-full h-2 mb-3 overflow-hidden">
-              <div class="${barColor} h-2 rounded-full transition-all duration-300" style="width: ${Math.min(porcentagem, 100)}%"></div>
-            </div>
-
-            <!-- Dados de Débito -->
-            <div class="flex justify-between items-baseline mb-1">
-              <span class="text-xs text-slate-500">Saldo Restante:</span>
-              <span class="text-lg font-bold ${restante < 0 ? 'text-rose-600' : 'text-slate-800'}">
-                R$ ${restante.toFixed(2)}
-              </span>
-            </div>
-          </div>
-
-          <div class="pt-2 border-t border-slate-100 flex justify-between text-[11px] text-slate-500">
-            <span>Gasto: <strong>R$ ${gasto.toFixed(2)}</strong></span>
-            <span>Meta: <strong>R$ ${estipulado.toFixed(2)}</strong></span>
-          </div>
-        `;
-        cardsContainer.appendChild(card);
-      });
-    }
-
-    // Ações de Salvar e Remover
-    formGasto.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const cat = document.getElementById("categoria").value;
-      const desc = document.getElementById("desc").value;
-      const val = parseFloat(document.getElementById("valor").value);
-      const aut = document.getElementById("autor").value;
-
-      await addDoc(transacoesCol, {
-        categoria: cat,
-        descricao: desc,
-        valor: val,
-        autor: aut,
-        data: new Date()
-      });
-
-      formGasto.reset();
-    });
-
-    window.removerGasto = async (id) => {
-      await deleteDoc(doc(db, "gastos", id));
-    };
-  </script>
-</body>
-</html>
+            <div class="text-xs text-slate-500">${item
