@@ -91,8 +91,8 @@
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Quem gastou?</label>
             <select id="autor" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
-              <option value="Legends">Ele</option>
-              <option value="Nandaii">Ela</option>
+              <option value="Legends">Legends</option>
+              <option value="Nandaii">Nandaii</option>
               <option value="Ambos">Ambos</option>
             </select>
           </div>
@@ -136,7 +136,7 @@
       "Gasolina": 400,
       "Transporte": 150,
       "Alimentação": 1200,
-      "Lanche": 200,
+      "Lanche": 250,
       "Entretenimento": 300,
       "Extra": 300
     };
@@ -262,4 +262,41 @@
         li.innerHTML = `
           <div>
             <div class="font-medium text-slate-900">${item.descricao}</div>
-            <div class="text-xs text-slate-500">${item
+            <div class="text-xs text-slate-500">${item.categoria} • Pago por <strong>${item.autor}</strong></div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="font-semibold text-slate-800">R$ ${item.valor.toFixed(2)}</span>
+            <button onclick="removerGasto('${item.id}')" class="text-xs text-rose-500 hover:text-rose-700 font-bold p-1">✕</button>
+          </div>
+        `;
+        lista.appendChild(li);
+      });
+
+      cardsContainer.innerHTML = "";
+      Object.keys(metas).forEach(cat => {
+        const estipulado = metas[cat] || 0;
+        const gasto = totalPorCategoria[cat] || 0;
+        const restante = estipulado - gasto;
+        const porcentagem = estipulado > 0 ? (gasto / estipulado) * 100 : 0;
+
+        let barColor = "bg-emerald-500";
+        let statusTextColor = "text-emerald-700";
+        if (porcentagem > 75 && porcentagem <= 100) {
+          barColor = "bg-amber-500";
+          statusTextColor = "text-amber-700";
+        } else if (porcentagem > 100) {
+          barColor = "bg-rose-500";
+          statusTextColor = "text-rose-600";
+        }
+
+        const card = document.createElement("div");
+        card.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between";
+        card.innerHTML = `
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-bold text-slate-900 text-sm">${cat}</span>
+              <span class="text-xs font-bold ${statusTextColor}">${porcentagem.toFixed(0)}%</span>
+            </div>
+            
+            <div class="w-full bg-slate-100 rounded-full h-2 mb-3 overflow-hidden">
+              <div class="${barColor} h-2
