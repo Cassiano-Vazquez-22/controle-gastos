@@ -16,10 +16,10 @@
       <p class="text-xs text-slate-500 mb-4">Coloca a senha cabeça de ovo.</p>
       
       <form id="form-senha" class="space-y-3">
-        <input type="password" id="campo-senha" placeholder="Senha da casa" required
+        <input type="password" id="campo-senha" placeholder="Senha da casa" required autocomplete="off"
           class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-center tracking-widest text-lg">
         <p id="msg-erro" class="text-xs text-rose-600 hidden font-semibold">Bah, esqueceu né?</p>
-        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg text-sm transition">
+        <button type="submit" id="btn-entrar" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg text-sm transition">
           Entrar
         </button>
       </form>
@@ -45,18 +45,14 @@
       <!-- Modal/Caixa para Configurar Metas -->
       <div id="modal-metas" class="hidden bg-white p-5 rounded-2xl border border-blue-200 shadow-sm space-y-4">
         <h3 class="font-bold text-sm text-slate-800">Definir Orçamento Estipulado por Categoria (R$)</h3>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs" id="inputs-metas">
-          <!-- Gerado dinamicamente via JS -->
-        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs" id="inputs-metas"></div>
         <div class="flex justify-end gap-2">
           <button id="btn-salvar-metas" class="bg-blue-600 text-white text-xs px-4 py-2 rounded-lg font-medium hover:bg-blue-700">Salvar Metas</button>
         </div>
       </div>
 
       <!-- Grade / Colunas das Categorias com Débito e % -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="cards-categorias">
-        <!-- Preenchido via Javascript -->
-      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="cards-categorias"></div>
 
       <!-- Formulário de Novo Gasto -->
       <form id="form-gasto" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
@@ -77,11 +73,291 @@
 
           <div class="sm:col-span-2">
             <label class="block text-xs font-semibold text-slate-600 mb-1">Descrição</label>
-            <input type="text" id="desc" placeholder="Ex: Posto, Supermercado XYZ..." required
+            <input type="text" id="desc" placeholder="Ex: Shell posto, Supermercado XYZ..." required
               class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-60
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Valor (R$)</label>
+            <input type="number" step="0.01" id="valor" placeholder="0,00" required
+              class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Quem gastou?</label>
+            <select id="autor" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+              <option value="Legends">Legends</option>
+              <option value="Nandaii">Nandaii</option>
+              <option value="Ambos">Ambos</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition text-sm">
+          Debitar Despesa
+        </button>
+      </form>
+
+      <!-- Histórico de Despesas -->
+      <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Histórico de Lançamentos</h2>
+        <ul id="lista-gastos" class="divide-y divide-slate-100 text-sm">
+          <li class="py-3 text-slate-400 text-center">Carregando registros...</li>
+        </ul>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- SCRIPT 1: AUTENTICAÇÃO INSTANTÂNEA -->
+  <script>
+    const SENHA_SECRETA = "2211";
+    const telaBloqueio = document.getElementById("tela-bloqueio");
+    const painelGastos = document.getElementById("painel-gastos");
+    const formSenha = document.getElementById("form-senha");
+    const campoSenha = document.getElementById("campo-senha");
+    const msgErro = document.getElementById("msg-erro");
+    const btnBloquear = document.getElementById("btn-bloquear");
+
+    function entrarPainel() {
+      telaBloqueio.classList.add("hidden");
+      painelGastos.classList.remove("hidden");
+      if (window.iniciarFirebase) {
+        window.iniciarFirebase();
+      }
+    }
+
+    function bloquearPainel() {
+      localStorage.removeItem("acesso_autorizado");
+      painelGastos.classList.add("hidden");
+      telaBloqueio.classList.remove("hidden");
+      campoSenha.value = "";
+    }
+
+    btnBloquear.addEventListener("click", bloquearPainel);
+
+    if (localStorage.getItem("acesso_autorizado") === "true") {
+      entrarPainel();
+    }
+
+    formSenha.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const digitado = campoSenha.value.trim();
+      if (digitado === SENHA_SECRETA) {
+        localStorage.setItem("acesso_autorizado", "true");
+        msgErro.classList.add("hidden");
+        entrarPainel();
+      } else {
+        msgErro.classList.remove("hidden");
+      }
+    });
+  </script>
+
+  <!-- SCRIPT 2: LIGAÇÃO FIREBASE -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, setDoc } 
+      from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBd12y23Gj5dP0aFAFlAj_5PBZibJ3V2Nw",
+      authDomain: "controle-gastos-5f2b3.firebaseapp.com",
+      projectId: "controle-gastos-5f2b3",
+      storageBucket: "controle-gastos-5f2b3.firebasestorage.app",
+      messagingSenderId: "171302880872",
+      appId: "1:171302880872:web:be84f4d8aeef60b9c55ddd"
+    };
+
+    const CATEGORIAS_PADRAO = {
+      "Gasolina": 400,
+      "Transporte": 150,
+      "Alimentação": 1200,
+      "Lanche": 200,
+      "Entretenimento": 300,
+      "Contas": 300
+    };
+
+    let app, db, transacoesCol, metaDocRef;
+    try {
+      app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+      transacoesCol = collection(db, "gastos");
+      metaDocRef = doc(db, "configuracoes", "metas");
+    } catch (e) {
+      console.error("Falha ao inicializar Firebase:", e);
+    }
+
+    const modalMetas = document.getElementById("modal-metas");
+    const btnMetas = document.getElementById("btn-metas");
+    const btnSalvarMetas = document.getElementById("btn-salvar-metas");
+    const inputsMetasContainer = document.getElementById("inputs-metas");
+    const cardsContainer = document.getElementById("cards-categorias");
+    const formGasto = document.getElementById("form-gasto");
+    const lista = document.getElementById("lista-gastos");
+
+    let metas = { ...CATEGORIAS_PADRAO };
+    let gastosAtuais = [];
+    let iniciado = false;
+
+    window.iniciarFirebase = function () {
+      if (iniciado || !db) return;
+      iniciado = true;
+
+      renderizarCamposMetas();
+
+      onSnapshot(metaDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+          metas = { ...CATEGORIAS_PADRAO, ...docSnap.data() };
+        }
+        renderizarCamposMetas();
+        atualizarInterface();
+      }, (err) => console.error("Erro metas:", err));
+
+      const q = query(transacoesCol, orderBy("data", "desc"));
+      onSnapshot(q, (snapshot) => {
+        gastosAtuais = [];
+        snapshot.forEach((docItem) => {
+          gastosAtuais.push({ id: docItem.id, ...docItem.data() });
+        });
+        atualizarInterface();
+      }, (err) => console.error("Erro gastos:", err));
+    };
+
+    btnMetas.addEventListener("click", () => modalMetas.classList.toggle("hidden"));
+
+    function renderizarCamposMetas() {
+      inputsMetasContainer.innerHTML = "";
+      Object.keys(metas).forEach(cat => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+          <label class="block font-medium text-slate-700 mb-1">${cat}</label>
+          <input type="number" id="meta-${cat}" value="${metas[cat]}" step="10"
+            class="w-full px-2 py-1.5 border rounded-lg focus:ring-1 focus:ring-blue-500">
+        `;
+        inputsMetasContainer.appendChild(div);
+      });
+    }
+
+    btnSalvarMetas.addEventListener("click", async () => {
+      Object.keys(metas).forEach(cat => {
+        const val = parseFloat(document.getElementById(`meta-${cat}`).value);
+        if (!isNaN(val)) metas[cat] = val;
+      });
+      try {
+        await setDoc(metaDocRef, metas);
+      } catch (err) {
+        console.error("Erro ao salvar:", err);
+      }
+      modalMetas.classList.add("hidden");
+      atualizarInterface();
+    });
+
+    function atualizarInterface() {
+      const totalPorCategoria = {};
+      Object.keys(metas).forEach(cat => totalPorCategoria[cat] = 0);
+
+      lista.innerHTML = "";
+      if (gastosAtuais.length === 0) {
+        lista.innerHTML = '<li class="py-3 text-slate-400 text-center">Nenhum gasto registrado ainda.</li>';
+      }
+
+      gastosAtuais.forEach(item => {
+        if (totalPorCategoria[item.categoria] !== undefined) {
+          totalPorCategoria[item.categoria] += item.valor;
+        }
+
+        const li = document.createElement("li");
+        li.className = "py-3 flex justify-between items-center gap-2";
+        li.innerHTML = `
+          <div>
+            <div class="font-medium text-slate-900">${item.descricao}</div>
+            <div class="text-xs text-slate-500">${item.categoria} • Pago por <strong>${item.autor}</strong></div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="font-semibold text-slate-800">R$ ${Number(item.valor).toFixed(2)}</span>
+            <button onclick="removerGasto('${item.id}')" class="text-xs text-rose-500 hover:text-rose-700 font-bold p-1">✕</button>
+          </div>
+        `;
+        lista.appendChild(li);
+      });
+
+      cardsContainer.innerHTML = "";
+      Object.keys(metas).forEach(cat => {
+        const estipulado = metas[cat] || 0;
+        const gasto = totalPorCategoria[cat] || 0;
+        const restante = estipulado - gasto;
+        const porcentagem = estipulado > 0 ? (gasto / estipulado) * 100 : 0;
+
+        let barColor = "bg-emerald-500";
+        let statusTextColor = "text-emerald-700";
+        if (porcentagem > 75 && porcentagem <= 100) {
+          barColor = "bg-amber-500";
+          statusTextColor = "text-amber-700";
+        } else if (porcentagem > 100) {
+          barColor = "bg-rose-500";
+          statusTextColor = "text-rose-600";
+        }
+
+        const card = document.createElement("div");
+        card.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between";
+        card.innerHTML = `
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-bold text-slate-900 text-sm">${cat}</span>
+              <span class="text-xs font-bold ${statusTextColor}">${porcentagem.toFixed(0)}%</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2 mb-3 overflow-hidden">
+              <div class="${barColor} h-2 rounded-full transition-all duration-300" style="width: ${Math.min(porcentagem, 100)}%"></div>
+            </div>
+            <div class="flex justify-between items-baseline mb-1">
+              <span class="text-xs text-slate-500">Saldo Restante:</span>
+              <span class="text-lg font-bold ${restante < 0 ? 'text-rose-600' : 'text-slate-800'}">
+                R$ ${restante.toFixed(2)}
+              </span>
+            </div>
+          </div>
+          <div class="pt-2 border-t border-slate-100 flex justify-between text-[11px] text-slate-500">
+            <span>Gasto: <strong>R$ ${gasto.toFixed(2)}</strong></span>
+            <span>Meta: <strong>R$ ${estipulado.toFixed(2)}</strong></span>
+          </div>
+        `;
+        cardsContainer.appendChild(card);
+      });
+    }
+
+    formGasto.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const cat = document.getElementById("categoria").value;
+      const desc = document.getElementById("desc").value;
+      const val = parseFloat(document.getElementById("valor").value);
+      const aut = document.getElementById("autor").value;
+
+      try {
+        await addDoc(transacoesCol, {
+          categoria: cat,
+          descricao: desc,
+          valor: val,
+          autor: aut,
+          data: new Date()
+        });
+        formGasto.reset();
+      } catch (err) {
+        alert("Erro ao gravar: " + err.message);
+      }
+    });
+
+    window.removerGasto = async (id) => {
+      try {
+        await deleteDoc(doc(db, "gastos", id));
+      } catch (err) {
+        console.error("Erro ao remover:", err);
+      }
+    };
+
+    if (localStorage.getItem("acesso_autorizado") === "true") {
+      window.iniciarFirebase();
+    }
+  </script>
+</body>
+</html>
