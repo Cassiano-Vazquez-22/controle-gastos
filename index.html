@@ -15,14 +15,16 @@
       <h2 class="text-lg font-bold text-slate-900 mb-1">Acesso Restrito</h2>
       <p class="text-xs text-slate-500 mb-4">Coloca a senha cabeça de ovo.</p>
       
-      <form id="form-senha" class="space-y-3">
-        <input type="password" id="campo-senha" placeholder="Senha da casa" required autocomplete="off"
-          class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-center tracking-widest text-lg">
+      <div class="space-y-3">
+        <input type="password" id="campo-senha" placeholder="Senha da casa" autocomplete="off"
+          onkeydown="if(event.key === 'Enter') validarSenha()"
+          class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center tracking-widest text-lg">
         <p id="msg-erro" class="text-xs text-rose-600 hidden font-semibold">Bah, esqueceu né?</p>
-        <button type="submit" id="btn-entrar" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg text-sm transition">
+        <button type="button" onclick="validarSenha()"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg text-sm transition">
           Entrar
         </button>
-      </form>
+      </div>
     </div>
 
     <!-- Painel Principal -->
@@ -35,27 +37,27 @@
           <p class="text-xs text-slate-500">Acompanhamento de orçamento mensal</p>
         </div>
         <div class="flex items-center gap-3">
-          <button id="btn-metas" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-1.5 rounded-lg border border-slate-300 transition">
+          <button id="btn-metas" onclick="alternarMetas()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-1.5 rounded-lg border border-slate-300 transition">
             ⚙️ Ajustar Metas
           </button>
-          <button id="btn-bloquear" class="text-xs text-slate-400 hover:text-rose-600 underline">Bloquear</button>
+          <button onclick="bloquearPainel()" class="text-xs text-slate-400 hover:text-rose-600 underline">Bloquear</button>
         </div>
       </header>
 
-      <!-- Modal/Caixa para Configurar Metas -->
+      <!-- Modal de Metas -->
       <div id="modal-metas" class="hidden bg-white p-5 rounded-2xl border border-blue-200 shadow-sm space-y-4">
         <h3 class="font-bold text-sm text-slate-800">Definir Orçamento Estipulado por Categoria (R$)</h3>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs" id="inputs-metas"></div>
         <div class="flex justify-end gap-2">
-          <button id="btn-salvar-metas" class="bg-blue-600 text-white text-xs px-4 py-2 rounded-lg font-medium hover:bg-blue-700">Salvar Metas</button>
+          <button onclick="guardarMetas()" class="bg-blue-600 text-white text-xs px-4 py-2 rounded-lg font-medium hover:bg-blue-700">Salvar Metas</button>
         </div>
       </div>
 
-      <!-- Grade / Colunas das Categorias com Débito e % -->
+      <!-- Grade de Categorias -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="cards-categorias"></div>
 
       <!-- Formulário de Novo Gasto -->
-      <form id="form-gasto" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+      <form id="form-gasto" onsubmit="adicionarDespesa(event)" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
         <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Novo Débito / Lançamento</h2>
         
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -99,62 +101,53 @@
         </button>
       </form>
 
-      <!-- Histórico de Despesas -->
+      <!-- Histórico -->
       <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
         <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Histórico de Lançamentos</h2>
         <ul id="lista-gastos" class="divide-y divide-slate-100 text-sm">
-          <li class="py-3 text-slate-400 text-center">Carregando registros...</li>
+          <li class="py-3 text-slate-400 text-center">A carregar lançamentos...</li>
         </ul>
       </section>
 
     </div>
   </div>
 
-  <!-- SCRIPT 1: AUTENTICAÇÃO INSTANTÂNEA -->
   <script>
     const SENHA_SECRETA = "2211";
-    const telaBloqueio = document.getElementById("tela-bloqueio");
-    const painelGastos = document.getElementById("painel-gastos");
-    const formSenha = document.getElementById("form-senha");
-    const campoSenha = document.getElementById("campo-senha");
-    const msgErro = document.getElementById("msg-erro");
-    const btnBloquear = document.getElementById("btn-bloquear");
 
-    function entrarPainel() {
-      telaBloqueio.classList.add("hidden");
-      painelGastos.classList.remove("hidden");
-      if (window.iniciarFirebase) {
-        window.iniciarFirebase();
+    function validarSenha() {
+      const campo = document.getElementById("campo-senha");
+      const msgErro = document.getElementById("msg-erro");
+      if (campo.value.trim() === SENHA_SECRETA) {
+        localStorage.setItem("acesso_autorizado", "true");
+        msgErro.classList.add("hidden");
+        document.getElementById("tela-bloqueio").classList.add("hidden");
+        document.getElementById("painel-gastos").classList.remove("hidden");
+        if (window.conectarFirebase) window.conectarFirebase();
+      } else {
+        msgErro.classList.remove("hidden");
       }
     }
 
     function bloquearPainel() {
       localStorage.removeItem("acesso_autorizado");
-      painelGastos.classList.add("hidden");
-      telaBloqueio.classList.remove("hidden");
-      campoSenha.value = "";
+      document.getElementById("painel-gastos").classList.add("hidden");
+      document.getElementById("tela-bloqueio").classList.remove("hidden");
+      document.getElementById("campo-senha").value = "";
     }
 
-    btnBloquear.addEventListener("click", bloquearPainel);
+    function alternarMetas() {
+      document.getElementById("modal-metas").classList.toggle("hidden");
+    }
 
     if (localStorage.getItem("acesso_autorizado") === "true") {
-      entrarPainel();
+      window.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("tela-bloqueio").classList.add("hidden");
+        document.getElementById("painel-gastos").classList.remove("hidden");
+      });
     }
-
-    formSenha.addEventListener("submit", function (e) {
-      e.preventDefault();
-      const digitado = campoSenha.value.trim();
-      if (digitado === SENHA_SECRETA) {
-        localStorage.setItem("acesso_autorizado", "true");
-        msgErro.classList.add("hidden");
-        entrarPainel();
-      } else {
-        msgErro.classList.remove("hidden");
-      }
-    });
   </script>
 
-  <!-- SCRIPT 2: LIGAÇÃO FIREBASE -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, setDoc } 
@@ -169,7 +162,12 @@
       appId: "1:171302880872:web:be84f4d8aeef60b9c55ddd"
     };
 
-    const CATEGORIAS_PADRAO = {
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const transacoesCol = collection(db, "gastos");
+    const metaDocRef = doc(db, "configuracoes", "metas");
+
+    let metas = {
       "Gasolina": 400,
       "Transporte": 150,
       "Alimentação": 1200,
@@ -177,42 +175,22 @@
       "Entretenimento": 300,
       "Contas": 300
     };
-
-    let app, db, transacoesCol, metaDocRef;
-    try {
-      app = initializeApp(firebaseConfig);
-      db = getFirestore(app);
-      transacoesCol = collection(db, "gastos");
-      metaDocRef = doc(db, "configuracoes", "metas");
-    } catch (e) {
-      console.error("Falha ao inicializar Firebase:", e);
-    }
-
-    const modalMetas = document.getElementById("modal-metas");
-    const btnMetas = document.getElementById("btn-metas");
-    const btnSalvarMetas = document.getElementById("btn-salvar-metas");
-    const inputsMetasContainer = document.getElementById("inputs-metas");
-    const cardsContainer = document.getElementById("cards-categorias");
-    const formGasto = document.getElementById("form-gasto");
-    const lista = document.getElementById("lista-gastos");
-
-    let metas = { ...CATEGORIAS_PADRAO };
     let gastosAtuais = [];
     let iniciado = false;
 
-    window.iniciarFirebase = function () {
-      if (iniciado || !db) return;
+    window.conectarFirebase = function () {
+      if (iniciado) return;
       iniciado = true;
 
       renderizarCamposMetas();
 
       onSnapshot(metaDocRef, (docSnap) => {
         if (docSnap.exists()) {
-          metas = { ...CATEGORIAS_PADRAO, ...docSnap.data() };
+          metas = { ...metas, ...docSnap.data() };
         }
         renderizarCamposMetas();
         atualizarInterface();
-      }, (err) => console.error("Erro metas:", err));
+      });
 
       const q = query(transacoesCol, orderBy("data", "desc"));
       onSnapshot(q, (snapshot) => {
@@ -221,13 +199,12 @@
           gastosAtuais.push({ id: docItem.id, ...docItem.data() });
         });
         atualizarInterface();
-      }, (err) => console.error("Erro gastos:", err));
+      });
     };
 
-    btnMetas.addEventListener("click", () => modalMetas.classList.toggle("hidden"));
-
     function renderizarCamposMetas() {
-      inputsMetasContainer.innerHTML = "";
+      const container = document.getElementById("inputs-metas");
+      container.innerHTML = "";
       Object.keys(metas).forEach(cat => {
         const div = document.createElement("div");
         div.innerHTML = `
@@ -235,31 +212,29 @@
           <input type="number" id="meta-${cat}" value="${metas[cat]}" step="10"
             class="w-full px-2 py-1.5 border rounded-lg focus:ring-1 focus:ring-blue-500">
         `;
-        inputsMetasContainer.appendChild(div);
+        container.appendChild(div);
       });
     }
 
-    btnSalvarMetas.addEventListener("click", async () => {
+    window.guardarMetas = async function () {
       Object.keys(metas).forEach(cat => {
         const val = parseFloat(document.getElementById(`meta-${cat}`).value);
         if (!isNaN(val)) metas[cat] = val;
       });
-      try {
-        await setDoc(metaDocRef, metas);
-      } catch (err) {
-        console.error("Erro ao salvar:", err);
-      }
-      modalMetas.classList.add("hidden");
+      await setDoc(metaDocRef, metas);
+      alternarMetas();
       atualizarInterface();
-    });
+    };
 
     function atualizarInterface() {
+      const lista = document.getElementById("lista-gastos");
+      const cardsContainer = document.getElementById("cards-categorias");
       const totalPorCategoria = {};
       Object.keys(metas).forEach(cat => totalPorCategoria[cat] = 0);
 
       lista.innerHTML = "";
       if (gastosAtuais.length === 0) {
-        lista.innerHTML = '<li class="py-3 text-slate-400 text-center">Nenhum gasto registrado ainda.</li>';
+        lista.innerHTML = '<li class="py-3 text-slate-400 text-center">Nenhum gasto registado ainda.</li>';
       }
 
       gastosAtuais.forEach(item => {
@@ -326,8 +301,9 @@
       });
     }
 
-    formGasto.addEventListener("submit", async (e) => {
+    window.adicionarDespesa = async function (e) {
       e.preventDefault();
+      const form = document.getElementById("form-gasto");
       const cat = document.getElementById("categoria").value;
       const desc = document.getElementById("desc").value;
       const val = parseFloat(document.getElementById("valor").value);
@@ -341,13 +317,13 @@
           autor: aut,
           data: new Date()
         });
-        formGasto.reset();
+        form.reset();
       } catch (err) {
         alert("Erro ao gravar: " + err.message);
       }
-    });
+    };
 
-    window.removerGasto = async (id) => {
+    window.removerGasto = async function (id) {
       try {
         await deleteDoc(doc(db, "gastos", id));
       } catch (err) {
@@ -356,7 +332,7 @@
     };
 
     if (localStorage.getItem("acesso_autorizado") === "true") {
-      window.iniciarFirebase();
+      window.conectarFirebase();
     }
   </script>
 </body>
