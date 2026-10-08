@@ -3,83 +3,123 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Controle Financeiro Familiar</title>
+  <title>Gestão Financeira Familiar</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen p-4 sm:p-6">
-  <div class="max-w-xl mx-auto space-y-6">
-    
-    <!-- Cabeçalho & Balanço -->
-    <header class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-      <h1 class="text-xl font-bold text-slate-900">Gastos da Casa 💰</h1>
-      <p class="text-xs text-slate-500">Sincronizado em tempo real</p>
+<body class="bg-slate-100 text-slate-800 min-h-screen p-3 sm:p-6">
+  <div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Tela de Bloqueio por Senha -->
+    <div id="tela-bloqueio" class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 text-center max-w-sm mx-auto mt-12">
+      <div class="text-4xl mb-3">🔒</div>
+      <h2 class="text-lg font-bold text-slate-900 mb-1">Acesso Restrito</h2>
+      <p class="text-xs text-slate-500 mb-4">Insira o código do casal para continuar.</p>
       
-      <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
-        <span class="text-sm font-medium text-slate-600">Total acumulado:</span>
-        <span id="total-geral" class="text-2xl font-bold text-rose-600">R$ 0,00</span>
-      </div>
-    </header>
+      <form id="form-senha" class="space-y-3">
+        <input type="password" id="campo-senha" placeholder="Senha da casa" required
+          class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-center tracking-widest text-lg">
+        <p id="msg-erro" class="text-xs text-rose-600 hidden font-semibold">Senha incorreta!</p>
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg text-sm transition">
+          Entrar
+        </button>
+      </form>
+    </div>
 
-    <!-- Formulário de Novo Gasto -->
-    <form id="form-gasto" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-      <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">Novo Lançamento</h2>
+    <!-- Painel Principal -->
+    <div id="painel-gastos" class="hidden space-y-6">
       
-      <div>
-        <label class="block text-xs font-semibold text-slate-600 mb-1">Descrição</label>
-        <input type="text" id="desc" placeholder="Ex: Supermercado, Farmácia" required
-          class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-      </div>
-
-      <div class="grid grid-cols-2 gap-3">
+      <!-- Topo: Balanço Geral e Controles -->
+      <header class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Valor (R$)</label>
-          <input type="number" step="0.01" id="valor" placeholder="0,00" required
-            class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+          <h1 class="text-xl font-bold text-slate-900">Planejamento & Gastos 💳</h1>
+          <p class="text-xs text-slate-500">Acompanhamento de orçamento mensal</p>
         </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Quem gastou?</label>
-          <select id="autor" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
-            <option value="Ele">Ele</option>
-            <option value="Ela">Ela</option>
-            <option value="Ambos">Ambos / Casa</option>
-          </select>
+        <div class="flex items-center gap-3">
+          <button id="btn-metas" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-1.5 rounded-lg border border-slate-300 transition">
+            ⚙️ Ajustar Metas
+          </button>
+          <button id="btn-bloquear" class="text-xs text-slate-400 hover:text-rose-600 underline">Bloquear</button>
+        </div>
+      </header>
+
+      <!-- Modal/Caixa para Configurar Metas -->
+      <div id="modal-metas" class="hidden bg-white p-5 rounded-2xl border border-blue-200 shadow-sm space-y-4">
+        <h3 class="font-bold text-sm text-slate-800">Definir Orçamento Estipulado por Categoria (R$)</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs" id="inputs-metas">
+          <!-- Gerado dinamicamente via JS -->
+        </div>
+        <div class="flex justify-end gap-2">
+          <button id="btn-salvar-metas" class="bg-blue-600 text-white text-xs px-4 py-2 rounded-lg font-medium hover:bg-blue-700">Salvar Metas</button>
         </div>
       </div>
 
-      <div>
-        <label class="block text-xs font-semibold text-slate-600 mb-1">Categoria</label>
-        <select id="categoria" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
-          <option value="Mercado">Alimentação / Mercado</option>
-          <option value="Moradia">Contas da Casa</option>
-          <option value="Transporte">Transporte / Combustível</option>
-          <option value="Lazer">Lazer / Restaurantes</option>
-          <option value="Saúde">Saúde / Farmácia</option>
-          <option value="Outros">Outros</option>
-        </select>
+      <!-- Grade / Colunas das Categorias com Débito e % -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="cards-categorias">
+        <!-- Preenchido via Javascript -->
       </div>
 
-      <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition text-sm">
-        Salvar Despesa
-      </button>
-    </form>
+      <!-- Formulário de Novo Gasto -->
+      <form id="form-gasto" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Novo Débito / Lançamento</h2>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-1">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Categoria</label>
+            <select id="categoria" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+              <option value="Gasolina">Gasolina</option>
+              <option value="Transporte">Transporte</option>
+              <option value="Alimentação">Alimentação</option>
+              <option value="Lanche">Lanche</option>
+              <option value="Entretenimento">Entretenimento</option>
+              <option value="Extra">Extra</option>
+            </select>
+          </div>
 
-    <!-- Lista de Gastos -->
-    <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-      <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-3">Histórico Recente</h2>
-      <ul id="lista-gastos" class="divide-y divide-slate-100 text-sm">
-        <li class="py-3 text-slate-400 text-center">Carregando registros...</li>
-      </ul>
-    </section>
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Descrição</label>
+            <input type="text" id="desc" placeholder="Ex: Shell posto, Supermercado XYZ..." required
+              class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+          </div>
+        </div>
 
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Valor (R$)</label>
+            <input type="number" step="0.01" id="valor" placeholder="0,00" required
+              class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Quem gastou?</label>
+            <select id="autor" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+              <option value="Ele">Ele</option>
+              <option value="Ela">Ela</option>
+              <option value="Ambos">Ambos</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition text-sm">
+          Debitar Despesa
+        </button>
+      </form>
+
+      <!-- Histórico de Despesas -->
+      <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Histórico de Lançamentos</h2>
+        <ul id="lista-gastos" class="divide-y divide-slate-100 text-sm">
+          <li class="py-3 text-slate-400 text-center">Carregando registros...</li>
+        </ul>
+      </section>
+
+    </div>
   </div>
 
-  <!-- Firebase Modular Scripts -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } 
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, setDoc, getDoc } 
       from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
-    // SUBSTITUA PELAS SUAS CHAVES DO FIREBASE:
+    // 1. COLE AQUI SUAS CREDENCIAIS DO FIREBASE:
     const firebaseConfig = {
       apiKey: "SUA_API_KEY",
       authDomain: "SEU_PROJETO.firebaseapp.com",
@@ -89,46 +129,143 @@
       appId: "SEU_APP_ID"
     };
 
+    // 2. SENHA DO CASAL:
+    const SENHA_SECRETA = "casal2026";
+
+    // Categorias solicitadas com valores padrão iniciais (em R$)
+    const CATEGORIAS_CONFIG = {
+      "Gasolina": 400,
+      "Transporte": 150,
+      "Alimentação": 1200,
+      "Lanche": 250,
+      "Entretenimento": 300,
+      "Extra": 300
+    };
+
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const transacoesCol = collection(db, "gastos");
+    const metaDocRef = doc(db, "configuracoes", "metas");
 
-    const form = document.getElementById("form-gasto");
+    // Elementos da interface
+    const telaBloqueio = document.getElementById("tela-bloqueio");
+    const painelGastos = document.getElementById("painel-gastos");
+    const formSenha = document.getElementById("form-senha");
+    const campoSenha = document.getElementById("campo-senha");
+    const msgErro = document.getElementById("msg-erro");
+    const btnBloquear = document.getElementById("btn-bloquear");
+
+    const modalMetas = document.getElementById("modal-metas");
+    const btnMetas = document.getElementById("btn-metas");
+    const btnSalvarMetas = document.getElementById("btn-salvar-metas");
+    const inputsMetasContainer = document.getElementById("inputs-metas");
+    const cardsContainer = document.getElementById("cards-categorias");
+
+    const formGasto = document.getElementById("form-gasto");
     const lista = document.getElementById("lista-gastos");
-    const totalEl = document.getElementById("total-geral");
 
-    // Salvar novo registro
-    form.addEventListener("submit", async (e) => {
+    let metas = { ...CATEGORIAS_CONFIG };
+    let gastosAtuais = [];
+
+    // Gerenciamento de Acesso / Senha
+    function desbloquear() {
+      telaBloqueio.classList.add("hidden");
+      painelGastos.classList.remove("hidden");
+      inicializarDados();
+    }
+
+    function bloquear() {
+      localStorage.removeItem("acesso_autorizado");
+      painelGastos.classList.add("hidden");
+      telaBloqueio.classList.remove("hidden");
+      campoSenha.value = "";
+    }
+
+    btnBloquear.addEventListener("click", bloquear);
+
+    if (localStorage.getItem("acesso_autorizado") === "true") {
+      desbloquear();
+    }
+
+    formSenha.addEventListener("submit", (e) => {
       e.preventDefault();
-      const desc = document.getElementById("desc").value;
-      const valor = parseFloat(document.getElementById("valor").value);
-      const autor = document.getElementById("autor").value;
-      const categoria = document.getElementById("categoria").value;
-
-      await addDoc(transacoesCol, {
-        descricao: desc,
-        valor: valor,
-        autor: autor,
-        categoria: categoria,
-        data: new Date()
-      });
-
-      form.reset();
+      if (campoSenha.value === SENHA_SECRETA) {
+        localStorage.setItem("acesso_autorizado", "true");
+        msgErro.classList.add("hidden");
+        desbloquear();
+      } else {
+        msgErro.classList.remove("hidden");
+      }
     });
 
-    // Ouvinte em tempo real (atualiza no celular de ambos instantaneamente)
-    const q = query(transacoesCol, orderBy("data", "desc"));
-    onSnapshot(q, (snapshot) => {
-      lista.innerHTML = "";
-      let total = 0;
+    // Abrir/Fechar configuração de metas
+    btnMetas.addEventListener("click", () => {
+      modalMetas.classList.toggle("hidden");
+    });
 
-      if (snapshot.empty) {
-        lista.innerHTML = '<li class="py-3 text-slate-400 text-center">Nenhum gasto registrado.</li>';
+    function renderizarCamposMetas() {
+      inputsMetasContainer.innerHTML = "";
+      Object.keys(metas).forEach(cat => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+          <label class="block font-medium text-slate-700 mb-1">${cat}</label>
+          <input type="number" id="meta-${cat}" value="${metas[cat]}" step="10"
+            class="w-full px-2 py-1.5 border rounded-lg focus:ring-1 focus:ring-blue-500">
+        `;
+        inputsMetasContainer.appendChild(div);
+      });
+    }
+
+    btnSalvarMetas.addEventListener("click", async () => {
+      Object.keys(metas).forEach(cat => {
+        const val = parseFloat(document.getElementById(`meta-${cat}`).value);
+        if (!isNaN(val)) metas[cat] = val;
+      });
+      await setDoc(metaDocRef, metas);
+      modalMetas.classList.add("hidden");
+      atualizarInterface();
+    });
+
+    // Iniciar escuta em tempo real do Firebase
+    function inicializarDados() {
+      renderizarCamposMetas();
+
+      // 1. Escuta mudanças nas metas estipuladas
+      onSnapshot(metaDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+          metas = { ...CATEGORIAS_CONFIG, ...docSnap.data() };
+        }
+        renderizarCamposMetas();
+        atualizarInterface();
+      });
+
+      // 2. Escuta os lançamentos de gastos
+      const q = query(transacoesCol, orderBy("data", "desc"));
+      onSnapshot(q, (snapshot) => {
+        gastosAtuais = [];
+        snapshot.forEach((docItem) => {
+          gastosAtuais.push({ id: docItem.id, ...docItem.data() });
+        });
+        atualizarInterface();
+      });
+    }
+
+    // Calcula débitos, porcentagens e atualiza os cards e lista
+    function atualizarInterface() {
+      // Inicializar somas
+      const totalPorCategoria = {};
+      Object.keys(metas).forEach(cat => totalPorCategoria[cat] = 0);
+
+      // Renderizar Histórico
+      lista.innerHTML = "";
+      if (gastosAtuais.length === 0) {
+        lista.innerHTML = '<li class="py-3 text-slate-400 text-center">Nenhum gasto registrado ainda.</li>';
       }
 
-      snapshot.forEach((docItem) => {
-        const item = docItem.data();
-        total += item.valor;
+      gastosAtuais.forEach(item => {
+        if (totalPorCategoria[item.categoria] !== undefined) {
+          totalPorCategoria[item.categoria] += item.valor;
+        }
 
         const li = document.createElement("li");
         li.className = "py-3 flex justify-between items-center gap-2";
@@ -139,13 +276,80 @@
           </div>
           <div class="flex items-center gap-3">
             <span class="font-semibold text-slate-800">R$ ${item.valor.toFixed(2)}</span>
-            <button onclick="removerGasto('${docItem.id}')" class="text-xs text-rose-500 hover:text-rose-700 font-bold p-1">✕</button>
+            <button onclick="removerGasto('${item.id}')" class="text-xs text-rose-500 hover:text-rose-700 font-bold p-1">✕</button>
           </div>
         `;
         lista.appendChild(li);
       });
 
-      totalEl.textContent = `R$ ${total.toFixed(2)}`;
+      // Renderizar Cards de Colunas com Débito e Porcentagem
+      cardsContainer.innerHTML = "";
+      Object.keys(metas).forEach(cat => {
+        const estipulado = metas[cat] || 0;
+        const gasto = totalPorCategoria[cat] || 0;
+        const restante = estipulado - gasto;
+        const porcentagem = estipulado > 0 ? (gasto / estipulado) * 100 : 0;
+
+        // Definir cor da barra e do saldo
+        let barColor = "bg-emerald-500";
+        let statusTextColor = "text-emerald-700";
+        if (porcentagem > 75 && porcentagem <= 100) {
+          barColor = "bg-amber-500";
+          statusTextColor = "text-amber-700";
+        } else if (porcentagem > 100) {
+          barColor = "bg-rose-500";
+          statusTextColor = "text-rose-600";
+        }
+
+        const card = document.createElement("div");
+        card.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between";
+        card.innerHTML = `
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-bold text-slate-900 text-sm">${cat}</span>
+              <span class="text-xs font-bold ${statusTextColor}">${porcentagem.toFixed(0)}%</span>
+            </div>
+            
+            <!-- Barra de Progresso -->
+            <div class="w-full bg-slate-100 rounded-full h-2 mb-3 overflow-hidden">
+              <div class="${barColor} h-2 rounded-full transition-all duration-300" style="width: ${Math.min(porcentagem, 100)}%"></div>
+            </div>
+
+            <!-- Dados de Débito -->
+            <div class="flex justify-between items-baseline mb-1">
+              <span class="text-xs text-slate-500">Saldo Restante:</span>
+              <span class="text-lg font-bold ${restante < 0 ? 'text-rose-600' : 'text-slate-800'}">
+                R$ ${restante.toFixed(2)}
+              </span>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-slate-100 flex justify-between text-[11px] text-slate-500">
+            <span>Gasto: <strong>R$ ${gasto.toFixed(2)}</strong></span>
+            <span>Meta: <strong>R$ ${estipulado.toFixed(2)}</strong></span>
+          </div>
+        `;
+        cardsContainer.appendChild(card);
+      });
+    }
+
+    // Ações de Salvar e Remover
+    formGasto.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const cat = document.getElementById("categoria").value;
+      const desc = document.getElementById("desc").value;
+      const val = parseFloat(document.getElementById("valor").value);
+      const aut = document.getElementById("autor").value;
+
+      await addDoc(transacoesCol, {
+        categoria: cat,
+        descricao: desc,
+        valor: val,
+        autor: aut,
+        data: new Date()
+      });
+
+      formGasto.reset();
     });
 
     window.removerGasto = async (id) => {
